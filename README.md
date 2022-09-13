@@ -1,3 +1,3 @@
-add to index.html in <code><body><code>: 
-<code><weather-widget />
-<script src="https://teemo.ru/widget/bundle.js"></script><code>
+add to index.html in __<body></body>__: 
+__<weather-widget />__
+__<script src="https://teemo.ru/widget/bundle.js"></script>__
