@@ -11,9 +11,7 @@ const city_name = ref([]);
 const city_input = ref('');
 const list = ref(null);
 const trash_icon = ref(null);
-let activeElement = ref('');
 let currentElement = ref('');
-let newCities = ref([]);
 
 const addNewCityByEnter = (e) => {
   const input = city_input.value.toLocaleLowerCase().trim();
@@ -42,29 +40,21 @@ const deleteCity = ((city, id) => {
 const formalFirstLetter = (string) => string.charAt(0).toUpperCase() + string.slice(1);
 
 const dragStart = (($event) => {
-  activeElement.value = $event.target;
+  $event.dataTransfer.setData('activeElId', $event.target.id);
 }) 
 
 const dragOver = (($event) => {
-  currentElement.value = $event.target;
-  const isNotTheSameEl = activeElement.value !== currentElement.value &&
-  currentElement.value.classList.contains('city-inner');
-
-  if (!isNotTheSameEl) {
-    return;
+  if ($event.target.id) {
+    currentElement.value = $event.target.id;
   }
-
-  const nextElement = currentElement.value === activeElement.value.nextElementSibling ?
-      currentElement.value.nextElementSibling :
-      currentElement.value;
-
-  list.value.insertBefore(activeElement.value, nextElement);
-  newCities.value = city_name.value.slice();
-  [newCities.value[currentElement.value.id], newCities.value[activeElement.value.id]] = [newCities.value[activeElement.value.id], newCities.value[currentElement.value.id]];
 })
 
-const onDrop = (() => {
-  localStorage.setItem('city_name', JSON.stringify(newCities.value));
+const onDrop = (($event) => {
+  const activeElId = $event.dataTransfer.getData('activeElId');
+  if ((activeElId !== currentElement.value) && activeElId && currentElement.value) {
+    [city_name.value[activeElId], city_name.value[currentElement.value]] = [city_name.value[currentElement.value], city_name.value[activeElId]];
+  }
+  localStorage.setItem('city_name', JSON.stringify(city_name.value));
 })
 
 onMounted(() => {
@@ -86,15 +76,15 @@ onMounted(() => {
       ref="list"
       class="city-list"
       @dragstart="dragStart($event)"
+      @drop="onDrop($event)"
       @dragover.prevent="dragOver($event)"
-      @drop="onDrop"
     >
       <div 
         class="city-inner" 
         v-for="city, id in city_name" 
         :key="id"
         :id="id"
-        draggable="true" 
+        draggable="true"
       >
         <div class="city-inner-left">
           <menu-icon class="menu-icon icon"/>
