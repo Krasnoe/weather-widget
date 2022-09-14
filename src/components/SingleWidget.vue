@@ -1,19 +1,26 @@
 <script setup>
 import WindArrowIcon from '@/assets/icons/WindArrowIcon.vue';
 import BarometerIcon from '@/assets/icons/BarometerIcon.vue';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 
 const weather = ref({});
 const icon = ref('');
+const api_key = ref('');
+const city_name = ref([]);
+
+// time of update weather, 10 min
+const updateTime = 600000;
+
 const props = defineProps({
   index: Number,
   city: String
 })
 
-const getWeather = (api_key, city_name) => {
-  if (city_name) {
-    axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${city_name}&appid=${api_key}&units=metric`)
+
+const getWeather = () => {
+  if (city_name.value) {
+    axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${city_name.value}&appid=${api_key.value}&units=metric`)
       .then((res) => {
         weather.value = res.data;
         icon.value = `http://openweathermap.org/img/wn/${weather.value.weather[0].icon}@2x.png`;
@@ -24,17 +31,20 @@ const getWeather = (api_key, city_name) => {
   }
 }
 
-const formalFirstLetter = (string) => string.charAt(0).toUpperCase() + string.slice(1);
+const weatherInterval = setInterval(() => {
+  getWeather();
+}, updateTime);
+
+const formatFirstLetter = string => string.charAt(0).toUpperCase() + string.slice(1);
 
 onMounted(() => {
-  const api_key = localStorage.getItem('api_key');
-  const city_name = JSON.parse(localStorage.getItem('city_name'))[props.index] || props.city;
-  
-  getWeather(api_key, city_name);
+  api_key.value = localStorage.getItem('api_key');
+  city_name.value = JSON.parse(localStorage.getItem('city_name'))[props.index] || props.city;
+  getWeather();
+})
 
-  setInterval(() => {
-    getWeather(api_key, city_name);
-  }, 600000)
+onUnmounted(() => {
+  clearInterval(weatherInterval);
 })
 </script>
 
@@ -51,7 +61,7 @@ onMounted(() => {
         <span class="temp-degree" >{{ Math.round(weather.main.temp) }}°С</span>
       </div>
 
-      <p class="feels-like">Feels like {{ Math.round(weather.main.feels_like) }}°С. {{ formalFirstLetter(weather.weather[0].description) }}</p>
+      <p class="feels-like">Feels like {{ Math.round(weather.main.feels_like) }}°С. {{ formatFirstLetter(weather.weather[0].description) }}</p>
 
       <div class="main-info-inner">
         <p class="main-info-text">
